@@ -1,0 +1,303 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Great Oak Price Calculator</title>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 20px;
+  background: #101a16;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+main {
+  max-width: 650px;
+  margin: auto;
+}
+
+header {
+  text-align: center;
+  padding: 20px;
+}
+
+h1 { font-size: 30px; }
+header p { color: #b7c8bd; }
+
+.products {
+  display: grid;
+  gap: 10px;
+}
+
+.item {
+  background: #1b2b24;
+  border: 1px solid #3b5548;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.name { font-weight: bold; }
+.price { color: #b7c8bd; margin-top: 5px; }
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+button {
+  border: none;
+  border-radius: 9px;
+  padding: 10px 14px;
+  background: #8bd3a5;
+  color: #102017;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled { opacity: .35; }
+
+.minus {
+  background: #40594b;
+  color: white;
+}
+
+.qty {
+  min-width: 22px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.summary {
+  margin-top: 20px;
+  padding: 20px;
+  background: #1b2b24;
+  border: 1px solid #3b5548;
+  border-radius: 16px;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  color: #b7c8bd;
+}
+
+.total {
+  border-top: 1px solid #3b5548;
+  margin-top: 10px;
+  padding-top: 15px;
+  color: white;
+  font-size: 26px;
+  font-weight: bold;
+}
+
+.payment {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.payment button {
+  flex: 1;
+  font-size: 15px;
+}
+
+.payment button:not(.selected) {
+  background: #40594b;
+  color: white;
+}
+
+.actions { margin-top: 18px; }
+
+.actions button {
+  width: 100%;
+  background: #40594b;
+  color: white;
+  font-size: 15px;
+}
+
+.note {
+  color: #b7c8bd;
+  font-size: 12px;
+  margin-top: 15px;
+}
+
+@media(max-width:400px) {
+  body { padding: 10px; }
+  .item { padding: 10px; }
+  .controls { gap: 6px; }
+}
+</style>
+</head>
+
+<body>
+<main>
+
+<header>
+<h1>Great Oak</h1>
+<p>Price Calculator & Order Total</p>
+</header>
+
+<h2>Menu</h2>
+<section class="products" id="products"></section>
+
+<section class="summary">
+
+<h2>Order Summary</h2>
+
+<div class="line">
+<span>Subtotal</span>
+<strong id="subtotal">$0.00</strong>
+</div>
+
+<div class="line">
+<span>Credit Card Surcharge</span>
+<strong id="fee">$0.00</strong>
+</div>
+
+<div class="line total">
+<span>TOTAL</span>
+<span id="total">$0.00</span>
+</div>
+
+<h3>Payment Method</h3>
+
+<div class="payment">
+<button id="cash" class="selected">Cash</button>
+<button id="card">Credit Card (+$1)</button>
+</div>
+
+<div class="actions">
+<button id="reset">Clear Order</button>
+</div>
+
+<p class="note">
+Credit card surcharge is $1 per order, not per item.
+</p>
+
+</section>
+</main>
+
+<script>
+const menu = [
+  ["Bottle of Water", 3],
+  ["Chips", 2],
+  ["Soda", 3],
+  ["Mini Soda", 2],
+  ["Frappuccino", 4],
+  ["Candy", 2],
+  ["Popcorn", 3],
+  ["Cotton Candy", 3],
+  ["Brownie", 2],
+  ["Rice Krispie", 2],
+  ["Moongram", 5]
+];
+
+let quantities = Array(menu.length).fill(0);
+let payment = "cash";
+
+const money = n => "$" + n.toFixed(2);
+const products = document.getElementById("products");
+
+menu.forEach(([name, price], i) => {
+  const item = document.createElement("div");
+  item.className = "item";
+
+  item.innerHTML = `
+    <div>
+      <div class="name"></div>
+      <div class="price"></div>
+    </div>
+    <div class="controls">
+      <button class="minus">−</button>
+      <span class="qty">0</span>
+      <button class="plus">+</button>
+    </div>
+  `;
+
+  item.querySelector(".name").textContent = name;
+  item.querySelector(".price").textContent =
+    money(price) + " each";
+
+  item.querySelector(".minus").onclick = () => {
+    quantities[i] = Math.max(0, quantities[i] - 1);
+    update();
+  };
+
+  item.querySelector(".plus").onclick = () => {
+    quantities[i]++;
+    update();
+  };
+
+  item.dataset.index = i;
+  products.appendChild(item);
+});
+
+function update() {
+  document.querySelectorAll(".item").forEach(item => {
+    const i = Number(item.dataset.index);
+
+    item.querySelector(".qty").textContent =
+      quantities[i];
+
+    item.querySelector(".minus").disabled =
+      quantities[i] === 0;
+  });
+
+  const subtotal = menu.reduce(
+    (sum, product, i) =>
+      sum + product[1] * quantities[i], 0
+  );
+
+  const fee =
+    payment === "card" && subtotal > 0 ? 1 : 0;
+
+  document.getElementById("subtotal").textContent =
+    money(subtotal);
+
+  document.getElementById("fee").textContent =
+    money(fee);
+
+  document.getElementById("total").textContent =
+    money(subtotal + fee);
+
+  document.getElementById("cash")
+    .classList.toggle("selected", payment === "cash");
+
+  document.getElementById("card")
+    .classList.toggle("selected", payment === "card");
+}
+
+document.getElementById("cash").onclick = () => {
+  payment = "cash";
+  update();
+};
+
+document.getElementById("card").onclick = () => {
+  payment = "card";
+  update();
+};
+
+document.getElementById("reset").onclick = () => {
+  quantities.fill(0);
+  payment = "cash";
+  update();
+};
+
+update();
+</script>
+
+</body>
+</html>
